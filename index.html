@@ -512,8 +512,10 @@
 
         .round-counter strong { color: var(--cyan); }
 
-        /* ── SCOREBOARD ──────────────────────────────────── */
-        .scoreboard { display: grid; gap: 10px; }
+        /* ── SCOREBOARD ──────────────────────────────── */
+        .scoreboard { display: grid; gap: 10px; max-height: 250px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .scoreboard::-webkit-scrollbar { display: none; }
+        .scoreboard { -ms-overflow-style: none; scrollbar-width: none; }
 
         .score-item {
             display: flex;
