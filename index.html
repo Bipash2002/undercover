@@ -1627,7 +1627,7 @@ function startGamePlay() {
     gameState.gameInProgress = true;
     gameState.eliminated = [];
     gameState.totalRounds = gameState.playerCount;
-    const civilians = gameState.players.filter(p => gameState.roles[p] === 'civilian');
+    const civilians = gameState.players.filter(p => gameState.roles[p] === 'civilian' || gameState.roles[p] === 'undercover');
     const firstPlayer = civilians[Math.floor(Math.random() * civilians.length)];
     gameState.firstDescriber = firstPlayer;
     updateGamePlayScreen();
