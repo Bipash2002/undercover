@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Undercover</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="wordpairs.js"></script>
+    <style>
+        :root {
+            --bg: #070810;
+            --surface: #0d0f1e;
+            --surface2: #12152a;
+            --border: rgba(255,255,255,0.07);
+            --border-glow: rgba(255,255,255,0.15);
+            --red: #e8365d;
+            --red-dim: rgba(232,54,93,0.15);
+            --cyan: #36e8d5;
+            --cyan-dim: rgba(54,232,213,0.12);
+            --gold: #f5c842;
+            --gold-dim: rgba(245,200,66,0.12);
+            --white: #f0f0f8;
+            --muted: #5a5b7a;
+            --text: #c8c9e8;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+        html, body {
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overscroll-behavior: none;
+        }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: var(--bg);
+            color: var(--white);
+            touch-action: pan-y;
+        }
+
+        /* ── ANIMATED BACKGROUND ─────────────────────────── */
+        .bg-layer {
+            position: fixed; inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-layer::before {
+            content: '';
+            position: absolute; inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 10% 20%, rgba(232,54,93,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 90% 80%, rgba(54,232,213,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at 50% 50%, rgba(245,200,66,0.03) 0%, transparent 70%);
+        }
+
+        /* Noise grain */
+        .bg-layer::after {
+            content: '';
+            position: absolute; inset: 0;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+        }
+
+        /* Floating orbs */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.18;
+            pointer-events: none;
+            z-index: 0;
+            animation: orb-drift 20s ease-in-out infinite alternate;
+        }
+        .orb-1 { width: 320px; height: 320px; background: var(--red); top: -100px; left: -80px; animation-duration: 22s; }
+        .orb-2 { width: 280px; height: 280px; background: var(--cyan); bottom: -80px; right: -60px; animation-duration: 18s; animation-delay: -9s; }
+        .orb-3 { width: 200px; height: 200px; background: var(--gold); top: 40%; left: 50%; animation-duration: 26s; animation-delay: -5s; opacity: 0.08; }
+
+        @keyframes orb-drift {
+            from { transform: translate(0, 0) scale(1); }
+            to { transform: translate(30px, 40px) scale(1.15); }
+        }
+
+        /* ── LAYOUT ──────────────────────────────────────── */
+        .container {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container-inner {
+            max-width: 480px;
+            width: 100%;
+            max-height: 100vh;
+            max-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── HEADER ──────────────────────────────────────── */
+        .game-header {
+            text-align: center;
+            padding: 16px 0 20px;
+            animation: header-in 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+            flex-shrink: 0;
+        }
+
+        @keyframes header-in {
+            from { opacity: 0; transform: translateY(-24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .game-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: clamp(2.5rem, 12vw, 4.5rem);
+            letter-spacing: 6px;
+            line-height: 1;
+            background: linear-gradient(160deg, var(--white) 0%, var(--cyan) 40%, var(--red) 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+        }
+
+        .game-title::after {
+            content: 'UNDERCOVER';
+            position: absolute;
+            inset: 0;
+            font-family: 'Bebas Neue', cursive;
+            letter-spacing: 6px;
+            background: linear-gradient(160deg, var(--white) 0%, var(--cyan) 40%, var(--red) 80%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: blur(14px);
+            opacity: 0.4;
+            z-index: -1;
+        }
+
+        .subtitle {
+            font-size: 0.65rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        /* ── SCREENS ─────────────────────────────────────── */
+        .screen { 
+            display: none;
+            will-change: opacity, transform;
+        }
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            animation: screen-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        @keyframes screen-in {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── CARD ────────────────────────────────────────── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px 18px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+        }
+
+        /* ── INPUTS ──────────────────────────────────────── */
+        .input-group { margin-bottom: 16px; }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--white);
+            font-size: 1rem;
+            font-family: 'Sora', sans-serif;
+            font-weight: 500;
+            transition: border-color 0.25s, box-shadow 0.25s;
+            -webkit-appearance: none;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: rgba(54,232,213,0.5);
+            box-shadow: 0 0 0 3px rgba(54,232,213,0.08);
+        }
+
+        /* ── BUTTONS ─────────────────────────────────────── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            font-family: 'Sora', sans-serif;
+            transition: transform 0.18s, box-shadow 0.18s, background 0.2s;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            -webkit-appearance: none;
+        }
+
+        .btn:active { transform: scale(0.97); }
+
+        .btn-primary {
+            background: var(--red);
+            color: #fff;
+            box-shadow: 0 8px 28px rgba(232,54,93,0.35);
+        }
+        .btn-primary:hover { box-shadow: 0 12px 36px rgba(232,54,93,0.5); transform: translateY(-1px); }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border-glow);
+            color: var(--text);
+        }
+        .btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+
+        .btn-gold {
+            background: var(--gold);
+            color: #111;
+            box-shadow: 0 8px 28px rgba(245,200,66,0.3);
+        }
+        .btn-gold:hover { box-shadow: 0 12px 36px rgba(245,200,66,0.45); transform: translateY(-1px); }
+
+        /* ── ACTION BUTTONS ──────────────────────────────── */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        /* ── HEADINGS ────────────────────────────────────── */
+        h2 {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 2rem;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+
+        h3 {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--muted);
+            font-weight: 600;
+            margin: 24px 0 12px;
+        }
+
+        /* ── CARD SELECTION GRID ─────────────────────────── */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .player-card {
+            aspect-ratio: 3/4;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .player-card::before {
+            content: '?';
+            font-family: 'Bebas Neue', cursive;
+            font-size: 3.5rem;
+            color: rgba(255,255,255,0.06);
+            position: absolute;
+        }
+
+        /* Shimmer line */
+        .player-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 60%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+            transition: left 0.5s;
+        }
+        .player-card:hover::after { left: 150%; }
+
+        .player-card:hover {
+            transform: translateY(-4px) scale(1.04);
+            border-color: rgba(54,232,213,0.4);
+            box-shadow: 0 12px 32px rgba(54,232,213,0.15);
+        }
+
+        .player-card:active { transform: scale(0.96); }
+
+        .player-card.selected {
+            background: linear-gradient(135deg, rgba(232,54,93,0.3) 0%, rgba(54,232,213,0.2) 100%);
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 2px var(--cyan), 0 16px 40px rgba(54,232,213,0.25);
+        }
+
+        .card-suit {
+            font-size: 2rem;
+            opacity: 0.8;
+            animation: card-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes card-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        /* ── ROLE REVEAL ─────────────────────────────────── */
+        .role-reveal {
+            text-align: center;
+            padding: 16px 8px;
+        }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .badge-civilian { background: rgba(54,232,213,0.12); color: var(--cyan); border: 1px solid rgba(54,232,213,0.3); }
+        .badge-undercover { background: rgba(245,200,66,0.12); color: var(--gold); border: 1px solid rgba(245,200,66,0.3); }
+        .badge-mrwhite { background: rgba(232,54,93,0.12); color: var(--red); border: 1px solid rgba(232,54,93,0.3); }
+
+        .role-title {
+            font-family: 'Bebas Neue', cursive;
+            font-size: clamp(2.2rem, 11vw, 3.5rem);
+            letter-spacing: 3px;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .role-civilian  { color: var(--cyan); text-shadow: 0 0 40px rgba(54,232,213,0.5); }
+        .role-undercover { color: var(--gold); text-shadow: 0 0 40px rgba(245,200,66,0.5); }
+        .role-mrwhite   { color: var(--red);  text-shadow: 0 0 40px rgba(232,54,93,0.5); }
+
+        .word-display {
+            margin: 16px 0;
+            padding: 20px 16px;
+            background: var(--surface2);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .word-display::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(54,232,213,0.05) 0%, rgba(232,54,93,0.05) 100%);
+        }
+
+        .word-text {
+            font-family: 'Bebas Neue', cursive;
+            font-size: clamp(2rem, 10vw, 3.2rem);
+            letter-spacing: 6px;
+            color: var(--white);
+            position: relative;
+        }
+
+        .word-unknown {
+            font-family: 'Bebas Neue', cursive;
+            font-size: clamp(2rem, 10vw, 3.2rem);
+            letter-spacing: 6px;
+            color: var(--muted);
+            position: relative;
+        }
+
+        .role-desc {
+            font-size: 0.85rem;
+            color: var(--text);
+            line-height: 1.6;
+            margin: 10px 0;
+        }
+
+        /* ── PLAYER CHIPS ────────────────────────────────── */
+        .player-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 8px 0;
+        }
+
+        .player-chip {
+            padding: 10px 18px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+            color: var(--text);
+        }
+
+        .player-chip:hover {
+            border-color: rgba(232,54,93,0.5);
+            color: var(--white);
+            transform: scale(1.06);
+        }
+
+        .player-chip.selected {
+            background: var(--red-dim);
+            border-color: var(--red);
+            color: var(--white);
+            box-shadow: 0 4px 16px rgba(232,54,93,0.25);
+            transform: scale(1.06);
+        }
+
+        .player-chip.eliminated {
+            opacity: 0.35;
+            text-decoration: line-through;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* ── TURN INDICATOR ──────────────────────────────── */
+        .turn-indicator {
+            text-align: center;
+            padding: 18px;
+            background: linear-gradient(135deg, rgba(232,54,93,0.1), rgba(54,232,213,0.08));
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .turn-indicator span { color: var(--cyan); }
+
+        /* ── ROUND COUNTER ───────────────────────────────── */
+        .round-counter {
+            position: fixed;
+            top: 16px; right: 16px;
+            padding: 10px 18px;
+            background: rgba(7,8,16,0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            z-index: 100;
+            color: var(--text);
+        }
+
+        .round-counter strong { color: var(--cyan); }
+
+        /* ── SCOREBOARD ──────────────────────────────────── */
+        .scoreboard { display: grid; gap: 10px; }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 18px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            border-left: 3px solid var(--cyan);
+            transition: transform 0.2s;
+        }
+
+        .score-item:hover { transform: translateX(4px); }
+
+        .score-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .score-points {
+            text-align: right;
+        }
+
+        .score-game {
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .score-total {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--cyan);
+        }
+
+        /* ── INFO TEXT ───────────────────────────────────── */
+        .info-text {
+            text-align: center;
+            color: var(--text);
+            font-size: 0.88rem;
+            line-height: 1.75;
+            margin: 10px 0;
+        }
+
+        /* ── DIVIDER ─────────────────────────────────────── */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0;
+        }
+
+        /* ── PLAYER NUMBER BADGE ─────────────────────────── */
+        .player-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px; height: 36px;
+            background: var(--red-dim);
+            border: 1px solid rgba(232,54,93,0.3);
+            border-radius: 50%;
+            font-family: 'Bebas Neue', cursive;
+            font-size: 1.2rem;
+            color: var(--red);
+            margin-bottom: 12px;
+        }
+
+        /* ── WINNER BADGE ────────────────────────────────── */
+        .winner-icon {
+            font-size: 3.5rem;
+            margin-bottom: 12px;
+            display: block;
+            animation: bounce-in 0.7s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+
+        @keyframes bounce-in {
+            from { transform: scale(0.3); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+        }
+
+        /* ── MR WHITE GUESS ──────────────────────────────── */
+        #mrWhiteGuessScreen .card { border-color: rgba(232,54,93,0.3); }
+        #mrWhiteGuessScreen .card::before { background: linear-gradient(90deg, transparent, rgba(232,54,93,0.3), transparent); }
+
+        /* ── MUTE BUTTON ─────────────────────────────────── */
+        .mute-btn {
+            position: fixed;
+            bottom: 20px; right: 16px;
+            width: 44px; height: 44px;
+            background: rgba(7,8,16,0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            font-size: 1.2rem;
+            transition: border-color 0.2s;
+        }
+        .mute-btn:hover { border-color: var(--cyan); }
+
+        /* ── PULSE RING (on game over) ───────────────────── */
+        @keyframes pulse-ring {
+            0%   { transform: scale(0.8); opacity: 0.8; }
+            100% { transform: scale(1.6); opacity: 0; }
+        }
+
+        .pulse-wrapper {
+            position: relative;
+            display: inline-flex;
+            margin-bottom: 16px;
+        }
+
+        .pulse-ring {
+            position: absolute; inset: 0;
+            border-radius: 50%;
+            border: 2px solid var(--red);
+            animation: pulse-ring 1.5s ease-out infinite;
+        }
+
+        /* ── MISC ────────────────────────────────────────── */
+        .text-center { text-align: center; }
+        .mt-4 { margin-top: 16px; }
+
+        @media (max-width: 380px) {
+            .card-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            .card { padding: 22px 16px; }
+            h2 { font-size: 1.7rem; }
+        }
+
+        /* ── INLINE VALIDATION ───────────────────────────── */
+        .field-error {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            padding: 12px 16px;
+            background: rgba(232,54,93,0.1);
+            border: 1px solid rgba(232,54,93,0.35);
+            border-radius: 10px;
+            font-size: 0.82rem;
+            color: var(--red);
+            font-weight: 500;
+            animation: shake 0.35s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        .field-error.visible { display: flex; }
+        .field-error::before { content: '⚠'; font-size: 1rem; }
+
+        @keyframes shake {
+            10%, 90% { transform: translateX(-2px); }
+            20%, 80% { transform: translateX(4px); }
+            30%, 50%, 70% { transform: translateX(-4px); }
+            40%, 60% { transform: translateX(4px); }
+        }
+
+        input.input-error {
+            border-color: rgba(232,54,93,0.6) !important;
+            box-shadow: 0 0 0 3px rgba(232,54,93,0.1) !important;
+        }
+
+        /* ── ROLE ILLUSTRATIONS ──────────────────────────── */
+        .role-illustration {
+            width: 90px;
+            height: 105px;
+            margin: 0 auto 12px;
+            display: block;
+            filter: drop-shadow(0 0 24px currentColor);
+            animation: float-illus 3s ease-in-out infinite alternate;
+        }
+        @keyframes float-illus {
+            from { transform: translateY(0px); }
+            to   { transform: translateY(-6px); }
+        }
+        .illus-civilian  { color: var(--cyan); }
+        .illus-undercover { color: var(--gold); }
+        .illus-mrwhite   { color: var(--red); }
+    </style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-layer"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- Mute Button -->
+<button class="mute-btn" onclick="toggleMute()" id="muteBtn" title="Toggle sound">🔊</button>
+
+<div class="container">
+    <div class="container-inner">
+        <div class="game-header">
+            <h1 class="game-title">Undercover</h1>
+            <p class="subtitle">Social Deduction · Bluff · Survive</p>
+        </div>
+
+        <!-- Setup Screen -->
+        <div id="setupScreen" class="screen active">
+            <div class="card">
+                <h2>New Game</h2>
+                <p class="info-text" style="text-align:left; margin-bottom:20px;">Civilians know the word. Undercover knows a similar word. Mr. White knows nothing.</p>
+                <div class="input-group">
+                    <label for="playerCount">Number of Players (5–8)</label>
+                    <input type="number" id="playerCount" min="5" max="8" value="6">
+                    <div class="field-error" id="playerCountError">Please enter a number between 5 and 8</div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="startPlayerSetup()">Start Game</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Name Entry Screen -->
+        <div id="playerNameScreen" class="screen">
+            <div class="card">
+                <div class="player-num" id="currentPlayerNum">1</div>
+                <h2>Enter Name</h2>
+                <p class="info-text" style="text-align:left; margin-bottom:20px; margin-top:0;">Player <span id="currentPlayerNumInline">1</span>, what's your name?</p>
+                <div class="input-group">
+                    <label for="playerName">Your Name</label>
+                    <input type="text" id="playerName" placeholder="e.g. Alex" autocomplete="off">
+                    <div class="field-error" id="playerNameError">Please enter a name</div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="addPlayer()">Next →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Selection Screen -->
+        <div id="cardSelectScreen" class="screen">
+            <div class="card">
+                <h2 id="selectingPlayerName" class="text-center" style="margin-bottom:6px;">Player</h2>
+                <p class="info-text">Tap a card to reveal your role</p>
+                <div id="cardGrid" class="card-grid"></div>
+            </div>
+        </div>
+
+        <!-- Role Reveal Screen -->
+        <div id="roleRevealScreen" class="screen">
+            <div class="card">
+                <div class="role-reveal">
+                    <div id="roleIllustration"></div>
+                    <div id="roleBadge" class="role-badge">●&nbsp; Civilian</div>
+                    <div class="role-title" id="roleTitle">Civilian</div>
+                    <p class="role-desc" id="roleDescription"></p>
+                    <div id="wordReveal"></div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="continueToNextPlayer()">Got it — Pass Device</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Play Screen -->
+        <div id="gamePlayScreen" class="screen">
+            <div class="round-counter">Round <strong id="roundNumber">1</strong> / <strong id="totalRounds">6</strong></div>
+            <div class="card">
+                <div class="turn-indicator" id="turnIndicator">
+                    <span id="currentTurnPlayer">Player 1</span> describes first!
+                </div>
+                <p class="info-text">Everyone describes their word in turn. Don't give yourself away!</p>
+                <h3>Active Players</h3>
+                <div id="activePlayers" class="player-list"></div>
+                <h3>Eliminated</h3>
+                <div id="eliminatedPlayers" class="player-list"></div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="startVoting()">Start Voting</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Voting Screen -->
+        <div id="votingScreen" class="screen">
+            <div class="card">
+                <h2>Vote</h2>
+                <p class="info-text" style="text-align:left; margin-bottom:14px;">Select the player you want to eliminate</p>
+                <div id="votePlayerList" class="player-list"></div>
+                <div class="action-buttons">
+                    <div class="field-error" id="voteError">Please select a player to eliminate</div>
+                    <button class="btn btn-primary" onclick="confirmVote()">Eliminate Selected</button>
+                    <button class="btn btn-secondary" onclick="skipVote()">Skip Voting</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Elimination Reveal Screen -->
+        <div id="eliminationScreen" class="screen">
+            <div class="card">
+                <div class="role-reveal">
+                    <div id="eliminationIllustration"></div>
+                    <p class="info-text" style="font-size:0.8rem; letter-spacing:2px; text-transform:uppercase; color:var(--muted);">Eliminated</p>
+                    <h2 id="eliminatedPlayerName" style="margin:8px 0 4px; font-size:2.2rem;">Player</h2>
+                    <div id="eliminatedRoleTitle" class="role-title" style="margin-bottom:8px;"></div>
+                    <p class="role-desc" id="eliminatedRoleText"></p>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="continueAfterElimination" onclick="continueAfterElimination()">Continue Game</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mr. White Guess Screen -->
+        <div id="mrWhiteGuessScreen" class="screen">
+            <div class="card">
+                <div class="role-reveal">
+                    <div class="role-badge badge-mrwhite">● Mr. White</div>
+                    <div class="role-title role-mrwhite" style="margin-top:10px;">Last Chance</div>
+                    <p class="role-desc">You've been eliminated — but guess the civilians' word correctly and you still win!</p>
+                    <div class="input-group" style="margin-top:24px; text-align:left;">
+                        <label for="mrWhiteGuess">Your Guess</label>
+                        <input type="text" id="mrWhiteGuess" placeholder="Type the word…" autocomplete="off">
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-gold" onclick="checkMrWhiteGuess()">Submit Guess</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="gameOverScreen" class="screen">
+            <div class="card">
+                <div class="role-reveal">
+                    <span id="winnerIcon" class="winner-icon">🏆</span>
+                    <div class="role-title" id="winnerTitle">Game Over</div>
+                    <p class="role-desc" id="winnerMessage"></p>
+                    <div class="divider"></div>
+                    <h3 style="margin-top:0;">Scores</h3>
+                    <div id="finalScores" class="scoreboard"></div>
+                </div>
+                <div class="action-buttons" style="margin-top:24px;">
+                    <button class="btn btn-primary" onclick="playAgain()">Play Again</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   AUDIO ENGINE  —  cinematic / creepy-soothing
+═══════════════════════════════════════════════ */
+let audioCtx = null;
+let isMuted   = false;
+let bgMaster  = null;   // master gain for ambient
+let bgPlaying = false;
+let bgOscs    = [];     // keep refs so we can fade
+
+function getCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+}
+
+function toggleMute() {
+    isMuted = !isMuted;
+    document.getElementById('muteBtn').textContent = isMuted ? '🔇' : '🔊';
+    if (bgMaster) {
+        const now = getCtx().currentTime;
+        bgMaster.gain.cancelScheduledValues(now);
+        bgMaster.gain.setTargetAtTime(isMuted ? 0 : 0.22, now, 1.2);
+    }
+}
+
+function startAmbient() {
+    if (bgPlaying) return;
+    bgPlaying = true;
+
+    try {
+        const ctx = getCtx();
+        const SR  = ctx.sampleRate;
+
+        bgMaster = ctx.createGain();
+        bgMaster.gain.value = 0.0001;
+        bgMaster.connect(ctx.destination);
+
+        // ── Warm reverb via feedback delay ────────────────────────────────
+        const dly = ctx.createDelay(2.5); dly.delayTime.value = 0.9;
+        const fb  = ctx.createGain(); fb.gain.value = 0.35;
+        const wet = ctx.createGain(); wet.gain.value = 0.25;
+        dly.connect(fb); fb.connect(dly);
+        dly.connect(wet); wet.connect(bgMaster);
+        function toMix(node) { node.connect(bgMaster); node.connect(dly); }
+
+        // ── LAYER 1: Deep warm bass — C2 + G2, open fifth, very soothing ──
+        // Open fifths have no dissonance — universally calming
+        [65.41, 98.00].forEach((f, i) => {
+            const osc = ctx.createOscillator();
+            osc.type = 'sine'; osc.frequency.value = f;
+            // Micro drift — makes it feel alive not robotic
+            const drift = ctx.createOscillator();
+            drift.frequency.value = 0.025 + i * 0.015;
+            const dg = ctx.createGain(); dg.gain.value = 0.8;
+            drift.connect(dg); dg.connect(osc.detune); drift.start();
+            const g = ctx.createGain(); g.gain.value = i === 0 ? 0.38 : 0.28;
+            osc.connect(g); toMix(g); osc.start();
+        });
+
+        // ── LAYER 2: Warm mid pad — C3 + E3 + G3, gentle C major chord ───
+        // Major chord = warm, safe, peaceful
+        [130.81, 164.81, 196.00].forEach((f, i) => {
+            const osc = ctx.createOscillator();
+            osc.type = 'triangle'; osc.frequency.value = f;
+            const vib = ctx.createOscillator();
+            vib.frequency.value = 0.04 + i * 0.02;
+            const vg = ctx.createGain(); vg.gain.value = 1.5;
+            vib.connect(vg); vg.connect(osc.detune); vib.start();
+            const g = ctx.createGain(); g.gain.value = [0.18, 0.14, 0.12][i];
+            osc.connect(g); toMix(g); osc.start();
+        });
+
+        // ── LAYER 3: Airy shimmer — C4 + G4, very soft ───────────────────
+        [261.63, 392.00].forEach((f, i) => {
+            const osc = ctx.createOscillator();
+            osc.type = 'sine'; osc.frequency.value = f;
+            const vib = ctx.createOscillator();
+            vib.frequency.value = 0.06 + i * 0.03;
+            const vg = ctx.createGain(); vg.gain.value = 1.2;
+            vib.connect(vg); vg.connect(osc.detune); vib.start();
+            const g = ctx.createGain(); g.gain.value = [0.06, 0.04][i];
+            osc.connect(g); toMix(g); osc.start();
+        });
+
+        // ── LAYER 4: Very slow swell (one breath per ~18 seconds) ─────────
+        const swellLFO = ctx.createOscillator();
+        swellLFO.type = 'sine'; swellLFO.frequency.value = 0.055;
+        const swellAmt = ctx.createGain(); swellAmt.gain.value = 0.028;
+        swellLFO.connect(swellAmt); swellAmt.connect(bgMaster.gain);
+        swellLFO.start();
+
+        // ── LAYER 5: Soft wind breath (narrow bandpass filtered noise) ────
+        const noiseLen = SR * 4;
+        const noiseBuf = ctx.createBuffer(2, noiseLen, SR);
+        for (let ch = 0; ch < 2; ch++) {
+            const nd = noiseBuf.getChannelData(ch);
+            const raw = new Float32Array(noiseLen);
+            for (let i = 0; i < noiseLen; i++) raw[i] = Math.random() * 2 - 1;
+            // Heavy smoothing = silky, not harsh
+            for (let i = 4; i < noiseLen - 4; i++)
+                nd[i] = (raw[i-4]+raw[i-3]+raw[i-2]+raw[i-1]+raw[i]+raw[i+1]+raw[i+2]+raw[i+3]+raw[i+4]) / 9;
+        }
+        function spawnBreath() {
+            if (!bgPlaying) return;
+            const src = ctx.createBufferSource();
+            src.buffer = noiseBuf; src.loop = true;
+            const bp = ctx.createBiquadFilter();
+            bp.type = 'bandpass';
+            bp.frequency.value = 350 + Math.random() * 150; // 350-500 Hz — soft, warm
+            bp.Q.value = 3;
+            const bpLFO = ctx.createOscillator();
+            bpLFO.frequency.value = 0.015 + Math.random() * 0.02;
+            const bpD = ctx.createGain(); bpD.gain.value = 15;
+            bpLFO.connect(bpD); bpD.connect(bp.frequency); bpLFO.start();
+            const g = ctx.createGain();
+            const hold = 22 + Math.random() * 12;
+            g.gain.setValueAtTime(0.0001, ctx.currentTime);
+            g.gain.linearRampToValueAtTime(0.04, ctx.currentTime + 7);
+            g.gain.setValueAtTime(0.04, ctx.currentTime + hold - 6);
+            g.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + hold);
+            src.connect(bp); bp.connect(g); toMix(g); src.start();
+            setTimeout(() => { try { src.stop(); bpLFO.stop(); } catch(e) {} }, hold * 1000 + 300);
+            setTimeout(spawnBreath, (hold - 7) * 1000);
+        }
+        spawnBreath();
+
+        // ── LAYER 6: Gentle chimes (pentatonic C major) ───────────────────
+        // C D E G A — no dissonance possible in pentatonic scale
+        const pentatonic = [523.25, 587.33, 659.25, 783.99, 880.00,
+                            1046.5, 1174.7, 1318.5];
+        function chime() {
+            if (!bgPlaying) return;
+            const now2 = ctx.currentTime;
+            // Play 1–2 notes softly
+            const numNotes = Math.random() < 0.4 ? 2 : 1;
+            for (let n = 0; n < numNotes; n++) {
+                const f = pentatonic[Math.floor(Math.random() * pentatonic.length)];
+                const delay = n * (0.18 + Math.random() * 0.12);
+                const osc = ctx.createOscillator(); const g = ctx.createGain();
+                osc.type = 'sine'; osc.frequency.value = f;
+                // Bell partial
+                const osc2 = ctx.createOscillator(); const g2 = ctx.createGain();
+                osc2.type = 'sine'; osc2.frequency.value = f * 2.756;
+                g.gain.setValueAtTime(0.18, now2 + delay);
+                g.gain.exponentialRampToValueAtTime(0.001, now2 + delay + 3.0);
+                g2.gain.setValueAtTime(0.05, now2 + delay);
+                g2.gain.exponentialRampToValueAtTime(0.001, now2 + delay + 1.5);
+                osc.connect(g); g.connect(bgMaster);
+                osc2.connect(g2); g2.connect(bgMaster);
+                osc.start(now2 + delay); osc.stop(now2 + delay + 3.5);
+                osc2.start(now2 + delay); osc2.stop(now2 + delay + 2.0);
+            }
+            // Next chime in 6–16 seconds
+            setTimeout(chime, 6000 + Math.random() * 10000);
+        }
+        setTimeout(chime, 4000);
+
+        // ── Smooth fade in over 5 seconds ─────────────────────────────────
+        bgMaster.gain.cancelScheduledValues(ctx.currentTime);
+        bgMaster.gain.setValueAtTime(0.0001, ctx.currentTime);
+        bgMaster.gain.linearRampToValueAtTime(isMuted ? 0.0001 : 0.20, ctx.currentTime + 5);
+
+    } catch(e) { bgPlaying = false; console.warn('Ambient failed:', e); }
+}
+
+/* ── UI: card tap — soft water-drop resonance ────────────────────────── */
+function sfxCardFlip() {
+    if (isMuted) return;
+    try {
+        const ctx = getCtx();
+        const now = ctx.currentTime;
+        const master = ctx.createGain();
+        master.gain.value = 0.28;
+        master.connect(ctx.destination);
+
+        // A plucked resonant tone: high sine that decays with a low thud
+        [[1200, 0.0, 0.18, 0.9], [600, 0.01, 0.28, 0.5], [300, 0.02, 0.45, 0.3]].forEach(([f, t, dur, amp]) => {
+            const osc = ctx.createOscillator();
+            const g   = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(f, now + t);
+            osc.frequency.exponentialRampToValueAtTime(f * 0.3, now + t + dur);
+            g.gain.setValueAtTime(amp, now + t);
+            g.gain.exponentialRampToValueAtTime(0.001, now + t + dur);
+            osc.connect(g); g.connect(master);
+            osc.start(now + t); osc.stop(now + t + dur + 0.05);
+        });
+    } catch(e) {}
+}
+
+/* ── UI: button tap — barely-there resonant click ───────────────────── */
+function sfxTap() {
+    if (isMuted) return;
+    try {
+        const ctx = getCtx();
+        const now = ctx.currentTime;
+        // Noise burst shaped into a muted thump
+        const bufLen = Math.floor(ctx.sampleRate * 0.05);
+        const buf    = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+        const data   = buf.getChannelData(0);
+        for (let i = 0; i < bufLen; i++)
+            data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufLen * 0.15));
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        // Band-pass to make it feel like a muffled knock
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass'; bp.frequency.value = 320; bp.Q.value = 1.8;
+        const g = ctx.createGain(); g.gain.value = 0.18;
+        src.connect(bp); bp.connect(g); g.connect(ctx.destination);
+        src.start(now);
+    } catch(e) {}
+}
+
+/* ── ELIMINATION: civilian — mournful falling chime ─────────────────── */
+function sfxCivilianEliminated() {
+    if (isMuted) return;
+    try {
+        const ctx = getCtx();
+        const now = ctx.currentTime;
+        const master = ctx.createGain();
+        master.gain.value = 0.35;
+        master.connect(ctx.destination);
+
+        // Church-bell partials descending slowly — sad but gentle
+        const notes = [
+            [523.25, 0.00, 2.2],
+            [415.30, 0.30, 2.4],
+            [369.99, 0.70, 2.8],
+            [311.13, 1.20, 3.5],
+        ];
+        notes.forEach(([freq, t, dur]) => {
+            const osc = ctx.createOscillator();
+            const g   = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            // Bell inharmonics
+            const osc2 = ctx.createOscillator();
+            osc2.type = 'sine';
+            osc2.frequency.value = freq * 2.756; // bell-like partial
+            const g2 = ctx.createGain(); g2.gain.value = 0.08;
+            g.gain.setValueAtTime(0.55, now + t);
+            g.gain.exponentialRampToValueAtTime(0.001, now + t + dur);
+            osc.connect(g); g.connect(master);
+            osc2.connect(g2); g2.connect(master);
+            osc.start(now + t); osc.stop(now + t + dur);
+            osc2.start(now + t); osc2.stop(now + t + dur);
+        });
+    } catch(e) {}
+}
+
+/* ── ELIMINATION: undercover — unmasking sting ───────────────────────────
+   Sharp metallic strike → dissonant tritone swell → slow fade into silence.
+   Feels like a mask being ripped off.
+*/
+function sfxUndercoverEliminated() {
+    if (isMuted) return;
+    try {
+        const ctx = getCtx();
+        const now = ctx.currentTime;
+        const master = ctx.createGain();
+        master.gain.value = 0.42;
+        master.connect(ctx.destination);
+
+        // 1. Metallic strike at t=0 — two detuned high partials, instant decay
+        [[1480, 0], [1567, 0.01]].forEach(([f, t]) => {
+            const osc = ctx.createOscillator();
+            const g   = ctx.createGain();
+            osc.type = 'triangle'; osc.frequency.value = f;
+            g.gain.setValueAtTime(0.55, now + t);
+            g.gain.exponentialRampToValueAtTime(0.001, now + t + 0.35);
+            osc.connect(g); g.connect(master);
+            osc.start(now + t); osc.stop(now + t + 0.4);
+        });
+
+        // 2. Tritone swell (A + Eb — most dissonant interval) rising slowly
+        [[110, 155.56], [220, 311.13]].forEach(([f1, f2], i) => {
+            [f1, f2].forEach(f => {
+                const osc = ctx.createOscillator();
+                const g   = ctx.createGain();
+                osc.type = 'sine'; osc.frequency.value = f;
+                g.gain.setValueAtTime(0.001, now + 0.1 + i * 0.05);
+                g.gain.linearRampToValueAtTime(0.28, now + 0.7);
+                g.gain.exponentialRampToValueAtTime(0.001, now + 2.6);
+                osc.connect(g); g.connect(master);
+                osc.start(now + 0.1); osc.stop(now + 2.8);
+            });
+        });
+
+        // 3. A single high sine that slowly detunes downward — unsettling
+        const slide = ctx.createOscillator();
+        const sg = ctx.createGain();
+        slide.type = 'sine';
+        slide.frequency.setValueAtTime(740, now + 0.15);
+        slide.frequency.exponentialRampToValueAtTime(185, now + 2.5);
+        sg.gain.setValueAtTime(0.001, now + 0.12);
+        sg.gain.linearRampToValueAtTime(0.22, now + 0.4);
+        sg.gain.exponentialRampToValueAtTime(0.001, now + 2.8);
+        slide.connect(sg); sg.connect(master);
+        slide.start(now + 0.12); slide.stop(now + 3.0);
+    } catch(e) {}
+}
+
+/* ── ELIMINATION: Mr. White — horror reveal ──────────────────────────────
+   Sub-bass cannon shot → glass-shard noise burst → long haunted sine
+   that slowly rises in pitch like a ghost materialising.
+*/
+function sfxMrWhiteEliminated() {
+    if (isMuted) return;
+    try {
+        const ctx = getCtx();
+        const now = ctx.currentTime;
+        const master = ctx.createGain();
+        master.gain.value = 0.48;
+        master.connect(ctx.destination);
+
+        // 1. Sub-bass cannon — pitched noise filtered very low
+        const cannonLen = Math.floor(ctx.sampleRate * 0.25);
+        const cannonBuf = ctx.createBuffer(1, cannonLen, ctx.sampleRate);
+        const cd = cannonBuf.getChannelData(0);
+        for (let i = 0; i < cannonLen; i++)
+            cd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (cannonLen * 0.18));
+        const cannon = ctx.createBufferSource(); cannon.buffer = cannonBuf;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 120;
+        const cg = ctx.createGain(); cg.gain.value = 1.6;
+        cannon.connect(lp); lp.connect(cg); cg.connect(master);
+        cannon.start(now);
+
+        // Sub-sine to reinforce the punch
+        [41.2, 55].forEach((f, i) => {
+            const osc = ctx.createOscillator(); const g = ctx.createGain();
+            osc.type = 'sine'; osc.frequency.value = f;
+            g.gain.setValueAtTime(0.7 - i * 0.2, now);
+            g.gain.exponentialRampToValueAtTime(0.001, now + 1.2 + i * 0.3);
+            osc.connect(g); g.connect(master);
+            osc.start(now); osc.stop(now + 1.8);
+        });
+
+        // 2. Glass-shard burst — high-passed white noise, very short
+        const glassLen = Math.floor(ctx.sampleRate * 0.08);
+        const glassBuf = ctx.createBuffer(1, glassLen, ctx.sampleRate);
+        const gd = glassBuf.getChannelData(0);
+        for (let i = 0; i < glassLen; i++)
+            gd[i] = (Math.random() * 2 - 1) * Math.exp(-i / (glassLen * 0.2));
+        const glass = ctx.createBufferSource(); glass.buffer = glassBuf;
+        const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3500;
+        const gg = ctx.createGain(); gg.gain.value = 0.5;
+        glass.connect(hp); hp.connect(gg); gg.connect(master);
+        glass.start(now + 0.04);
+
+        // 3. Ghost tone — starts at 220 Hz, creeps UP to 370 Hz over 4 s
+        //    Very quiet, with a slow tremolo — deeply unsettling
+        const ghost = ctx.createOscillator(); const ghostG = ctx.createGain();
+        ghost.type = 'sine';
+        ghost.frequency.setValueAtTime(220, now + 0.3);
+        ghost.frequency.exponentialRampToValueAtTime(370, now + 4.2);
+        // tremolo on the ghost
+        const gTremLFO = ctx.createOscillator(); const gTremD = ctx.createGain();
+        gTremLFO.frequency.value = 5.5; gTremD.gain.value = 0.06;
+        gTremLFO.connect(gTremD); gTremD.connect(ghostG.gain);
+        gTremLFO.start(now + 0.3); gTremLFO.stop(now + 4.5);
+        ghostG.gain.setValueAtTime(0.001, now + 0.25);
+        ghostG.gain.linearRampToValueAtTime(0.18, now + 0.9);
+        ghostG.gain.exponentialRampToValueAtTime(0.001, now + 4.5);
+        ghost.connect(ghostG); ghostG.connect(master);
+        ghost.start(now + 0.25); ghost.stop(now + 4.6);
+    } catch(e) {}
+}
+
+/* ── WIN: civilians — warm ascending resolution ──────────────────────── */
+function sfxWin() {
+    if (isMuted) return;
+    try {
+        const ctx = getCtx();
+        const now = ctx.currentTime;
+        const master = ctx.createGain();
+        master.gain.value = 0.32;
+        master.connect(ctx.destination);
+
+        // Soft major arpeggio, each note with bell-like decay
+        const arpNotes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99];
+        arpNotes.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const g   = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            const t = now + i * 0.18;
+            g.gain.setValueAtTime(0.5, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+            osc.connect(g); g.connect(master);
+            osc.start(t); osc.stop(t + 1.5);
+        });
+
+        // Long warm pad chord underneath
+        [261.63, 329.63, 392.00].forEach(f => {
+            const osc = ctx.createOscillator();
+            const g   = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = f;
+            g.gain.setValueAtTime(0.001, now + 0.3);
+            g.gain.linearRampToValueAtTime(0.18, now + 1.2);
+            g.gain.exponentialRampToValueAtTime(0.001, now + 3.5);
+            osc.connect(g); g.connect(master);
+            osc.start(now + 0.3); osc.stop(now + 3.8);
+        });
+    } catch(e) {}
+}
+
+/* ── LOSS: civilians lose — the world goes dark ──────────────────────────
+   Low funeral toll: a heavy bell strike followed by a sinking minor chord
+   that slowly dissolves, like hope draining out of the room.
+*/
+function sfxThreatsWin() {
+    if (isMuted) return;
+    try {
+        const ctx = getCtx();
+        const now = ctx.currentTime;
+        const master = ctx.createGain();
+        master.gain.value = 0.42;
+        master.connect(ctx.destination);
+
+        // 1. Heavy bell strike — fundamental + two partials, big low
+        [[82.41, 1.0], [164.81, 0.45], [246.94, 0.18]].forEach(([f, amp]) => {
+            const osc = ctx.createOscillator(); const g = ctx.createGain();
+            osc.type = 'sine'; osc.frequency.value = f;
+            g.gain.setValueAtTime(amp, now);
+            g.gain.exponentialRampToValueAtTime(0.001, now + 4.5);
+            osc.connect(g); g.connect(master);
+            osc.start(now); osc.stop(now + 5.0);
+        });
+
+        // 2. After the strike, a minor chord slowly rises from silence
+        //    Am: A + C + E — but voiced low and spread wide
+        [[55, 0.6, 1.0], [65.41, 0.9, 1.2], [82.41, 1.2, 1.0], [110, 1.5, 0.7]].forEach(([f, startT, amp]) => {
+            const osc = ctx.createOscillator(); const g = ctx.createGain();
+            osc.type = 'triangle'; osc.frequency.value = f;
+            g.gain.setValueAtTime(0.001, now + startT);
+            g.gain.linearRampToValueAtTime(amp * 0.35, now + startT + 1.0);
+            g.gain.exponentialRampToValueAtTime(0.001, now + startT + 3.5);
+            osc.connect(g); g.connect(master);
+            osc.start(now + startT); osc.stop(now + startT + 4.0);
+        });
+
+        // 3. A descending dissonant line that "sinks" — the final blow
+        const sinkFreqs = [220, 196, 174.6, 155.56, 138.59, 110];
+        sinkFreqs.forEach((f, i) => {
+            const osc = ctx.createOscillator(); const g = ctx.createGain();
+            osc.type = 'sine'; osc.frequency.value = f;
+            const t = now + 1.8 + i * 0.28;
+            g.gain.setValueAtTime(0.22, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+            osc.connect(g); g.connect(master);
+            osc.start(t); osc.stop(t + 0.7);
+        });
+    } catch(e) {}
+}
+
+/* ═══════════════════════════════════════════════
+   WORD PAIRS (unchanged)
+═══════════════════════════════════════════════ */
+// wordPairs loaded from wordpairs.js
+
+/* ═══════════════════════════════════════════════
+   GAME STATE (unchanged)
+═══════════════════════════════════════════════ */
+let gameState = {
+    playerCount: 0,
+    players: [],
+    currentPlayerIndex: 0,
+    roles: {},
+    words: {},
+    eliminated: [],
+    scores: {},
+    roundScores: {},
+    gameNumber: 1,
+    round: 1,
+    totalRounds: 0,
+    firstDescriber: null,
+    selectedVotePlayer: null,
+    gameInProgress: false,
+    civilianWord: null
+};
+
+/* ═══════════════════════════════════════════════
+   SCREEN HELPERS
+═══════════════════════════════════════════════ */
+function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(screenId).classList.add('active');
+}
+
+/* ═══════════════════════════════════════════════
+   ALL GAME LOGIC BELOW IS IDENTICAL TO ORIGINAL
+═══════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════
+   INLINE VALIDATION HELPERS
+═══════════════════════════════════════════════ */
+function showError(errorId, inputId) {
+    const err = document.getElementById(errorId);
+    if (err) err.classList.add('visible');
+    if (inputId) {
+        const inp = document.getElementById(inputId);
+        if (inp) inp.classList.add('input-error');
+    }
+}
+function clearError(errorId, inputId) {
+    const err = document.getElementById(errorId);
+    if (err) err.classList.remove('visible');
+    if (inputId) {
+        const inp = document.getElementById(inputId);
+        if (inp) inp.classList.remove('input-error');
+    }
+}
+
+/* ═══════════════════════════════════════════════
+   ROLE ILLUSTRATIONS (inline SVG)
+═══════════════════════════════════════════════ */
+const roleIllustrations = {
+    civilian: `<svg class="role-illustration illus-civilian" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Glow aura -->
+        <circle cx="60" cy="42" r="32" fill="currentColor" opacity="0.06"/>
+        <!-- Neck -->
+        <rect x="54" y="62" width="12" height="10" rx="4" fill="currentColor" opacity="0.4"/>
+        <!-- Body / shirt -->
+        <path d="M28 110 Q28 80 60 76 Q92 80 92 110 L92 130 L28 130 Z" fill="currentColor" opacity="0.18" stroke="currentColor" stroke-width="1.5"/>
+        <!-- Collar V -->
+        <path d="M48 76 L60 92 L72 76" stroke="currentColor" stroke-width="2" fill="none" opacity="0.6"/>
+        <!-- Left arm -->
+        <path d="M28 84 Q18 92 20 108" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity="0.25"/>
+        <!-- Right arm -->
+        <path d="M92 84 Q102 92 100 108" stroke="currentColor" stroke-width="8" stroke-linecap="round" opacity="0.25"/>
+        <!-- Head -->
+        <circle cx="60" cy="40" r="22" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="2"/>
+        <!-- Face shine -->
+        <ellipse cx="53" cy="32" rx="6" ry="4" fill="currentColor" opacity="0.08"/>
+        <!-- Eyes — open, friendly -->
+        <circle cx="52" cy="38" r="3.5" fill="currentColor" opacity="0.9"/>
+        <circle cx="68" cy="38" r="3.5" fill="currentColor" opacity="0.9"/>
+        <!-- Eye shine -->
+        <circle cx="53.5" cy="36.5" r="1.2" fill="white" opacity="0.7"/>
+        <circle cx="69.5" cy="36.5" r="1.2" fill="white" opacity="0.7"/>
+        <!-- Smile -->
+        <path d="M50 47 Q60 56 70 47" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <!-- Cheeks -->
+        <circle cx="47" cy="46" r="4" fill="currentColor" opacity="0.12"/>
+        <circle cx="73" cy="46" r="4" fill="currentColor" opacity="0.12"/>
+        <!-- Trust halo -->
+        <circle cx="60" cy="40" r="28" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3" opacity="0.3"/>
+        <!-- Star badge on chest -->
+        <path d="M60 96 L62 102 L68 102 L63 106 L65 112 L60 108 L55 112 L57 106 L52 102 L58 102 Z" fill="currentColor" opacity="0.55"/>
+    </svg>`,
+
+    undercover: `<svg class="role-illustration illus-undercover" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Dark aura -->
+        <circle cx="60" cy="44" r="34" fill="currentColor" opacity="0.05"/>
+        <!-- Trench coat body -->
+        <path d="M24 110 Q24 78 60 74 Q96 78 96 110 L96 132 L24 132 Z" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="1.5"/>
+        <!-- Coat lapels -->
+        <path d="M46 74 L40 92 L60 84 L80 92 L74 74" stroke="currentColor" stroke-width="2" fill="currentColor" fill-opacity="0.2" opacity="0.8"/>
+        <!-- Coat buttons -->
+        <circle cx="60" cy="94" r="2" fill="currentColor" opacity="0.5"/>
+        <circle cx="60" cy="103" r="2" fill="currentColor" opacity="0.5"/>
+        <circle cx="60" cy="112" r="2" fill="currentColor" opacity="0.5"/>
+        <!-- Left arm with coat -->
+        <path d="M24 84 Q14 96 16 114" stroke="currentColor" stroke-width="10" stroke-linecap="round" opacity="0.2"/>
+        <!-- Right arm with coat -->
+        <path d="M96 84 Q106 96 104 114" stroke="currentColor" stroke-width="10" stroke-linecap="round" opacity="0.2"/>
+        <!-- Head -->
+        <circle cx="60" cy="42" r="22" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="2"/>
+        <!-- Hat brim -->
+        <ellipse cx="60" cy="24" rx="26" ry="6" fill="currentColor" opacity="0.6"/>
+        <!-- Hat top -->
+        <path d="M38 24 L40 6 Q60 2 80 6 L82 24 Z" fill="currentColor" opacity="0.75"/>
+        <!-- Hat band -->
+        <rect x="40" y="20" width="40" height="5" rx="2" fill="currentColor" opacity="0.4"/>
+        <!-- Eye mask -->
+        <path d="M38 38 Q44 33 52 36 Q60 34 68 36 Q76 33 82 38 Q76 44 68 42 Q60 40 52 42 Q44 44 38 38 Z" fill="currentColor" opacity="0.75"/>
+        <!-- Eyes gleam through mask -->
+        <circle cx="50" cy="38" r="2.5" fill="var(--bg)" opacity="0.9"/>
+        <circle cx="70" cy="38" r="2.5" fill="var(--bg)" opacity="0.9"/>
+        <circle cx="51" cy="37" r="1" fill="currentColor" opacity="0.6"/>
+        <circle cx="71" cy="37" r="1" fill="currentColor" opacity="0.6"/>
+        <!-- Smirk -->
+        <path d="M52 50 Q60 56 68 50" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.7"/>
+        <!-- Collar up -->
+        <path d="M46 64 L44 74 M74 64 L76 74" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+        <!-- Shadow beneath -->
+        <ellipse cx="60" cy="132" rx="28" ry="4" fill="currentColor" opacity="0.1"/>
+    </svg>`,
+
+    mrwhite: `<svg class="role-illustration illus-mrwhite" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Eerie glow -->
+        <circle cx="60" cy="44" r="36" fill="currentColor" opacity="0.04"/>
+        <!-- Ghost body — wispy bottom -->
+        <path d="M28 110 Q28 78 60 74 Q92 78 92 110 Q84 104 76 112 Q68 120 60 112 Q52 120 44 112 Q36 104 28 110 Z" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+        <!-- Ghost arms — floating, wispy -->
+        <path d="M28 88 Q12 82 10 70 Q18 68 24 78" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.25" fill="none"/>
+        <path d="M92 88 Q108 82 110 70 Q102 68 96 78" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.25" fill="none"/>
+        <!-- Head -->
+        <circle cx="60" cy="42" r="22" fill="currentColor" opacity="0.12" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+        <!-- Empty eyes — hollow -->
+        <circle cx="51" cy="38" r="5" fill="currentColor" opacity="0.5"/>
+        <circle cx="69" cy="38" r="5" fill="currentColor" opacity="0.5"/>
+        <!-- Dark void in eyes -->
+        <circle cx="51" cy="38" r="3" fill="var(--bg)" opacity="0.8"/>
+        <circle cx="69" cy="38" r="3" fill="var(--bg)" opacity="0.8"/>
+        <!-- Confused / open mouth -->
+        <ellipse cx="60" cy="50" rx="5" ry="3.5" fill="currentColor" opacity="0.45"/>
+        <!-- Question marks floating around -->
+        <text x="16" y="36" font-size="13" fill="currentColor" opacity="0.35" font-family="serif" transform="rotate(-15 16 36)">?</text>
+        <text x="89" y="30" font-size="11" fill="currentColor" opacity="0.25" font-family="serif" transform="rotate(12 89 30)">?</text>
+        <text x="82" y="58" font-size="9" fill="currentColor" opacity="0.2" font-family="serif" transform="rotate(8 82 58)">?</text>
+        <!-- Wispy trails at bottom -->
+        <path d="M44 118 Q40 126 44 132" stroke="currentColor" stroke-width="2" opacity="0.2" fill="none" stroke-linecap="round"/>
+        <path d="M60 120 Q58 128 62 134" stroke="currentColor" stroke-width="2" opacity="0.2" fill="none" stroke-linecap="round"/>
+        <path d="M76 118 Q80 126 76 132" stroke="currentColor" stroke-width="2" opacity="0.2" fill="none" stroke-linecap="round"/>
+        <!-- Floating aura rings -->
+        <circle cx="60" cy="42" r="30" stroke="currentColor" stroke-width="0.8" stroke-dasharray="2 6" opacity="0.2"/>
+        <circle cx="60" cy="42" r="38" stroke="currentColor" stroke-width="0.8" stroke-dasharray="2 8" opacity="0.1"/>
+        <!-- Shadow beneath -->
+        <ellipse cx="60" cy="134" rx="22" ry="3" fill="currentColor" opacity="0.08"/>
+    </svg>`
+};
+
+function setRoleIllustration(containerId, role) {
+    const el = document.getElementById(containerId);
+    if (el) el.innerHTML = roleIllustrations[role] || '';
+}
+
+function startPlayerSetup() {
+    startAmbient();
+    const count = parseInt(document.getElementById('playerCount').value);
+    if (count < 5 || count > 8) {
+        showError('playerCountError', 'playerCount');
+        return;
+    }
+    clearError('playerCountError', 'playerCount');
+    gameState.playerCount = count;
+    gameState.players = [];
+    gameState.currentPlayerIndex = 0;
+    showScreen('playerNameScreen');
+    updatePlayerNumber();
+}
+
+function updatePlayerNumber() {
+    const n = gameState.currentPlayerIndex + 1;
+    document.getElementById('currentPlayerNum').textContent = n;
+    document.getElementById('currentPlayerNumInline').textContent = n;
+}
+
+function addPlayer() {
+    const nameInput = document.getElementById('playerName');
+    const name = nameInput.value.trim();
+    if (!name) {
+        showError('playerNameError', 'playerName');
+        return;
+    }
+    clearError('playerNameError', 'playerName');
+    gameState.players.push(name);
+    gameState.scores[name] = gameState.scores[name] || 0;
+    gameState.roundScores[name] = 0;
+    nameInput.value = '';
+    if (gameState.players.length < gameState.playerCount) {
+        gameState.currentPlayerIndex++;
+        updatePlayerNumber();
+    } else {
+        assignRolesAndWords();
+        gameState.currentPlayerIndex = 0;
+        showCardSelection();
+    }
+}
+
+function assignRolesAndWords() {
+    const playerCount = gameState.playerCount;
+    const roles = [];
+    if (playerCount >= 5 && playerCount <= 8) {
+        roles.push('mrwhite');
+        roles.push('undercover');
+        for (let i = 2; i < playerCount; i++) roles.push('civilian');
+    }
+    for (let i = roles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [roles[i], roles[j]] = [roles[j], roles[i]];
+    }
+    const shuffledPlayers = [...gameState.players];
+    for (let i = shuffledPlayers.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledPlayers[i], shuffledPlayers[j]] = [shuffledPlayers[j], shuffledPlayers[i]];
+    }
+    const wordPair = wordPairs[Math.floor(Math.random() * wordPairs.length)];
+    gameState.civilianWord = wordPair.civilian;
+    shuffledPlayers.forEach((player, index) => {
+        const role = roles[index];
+        gameState.roles[player] = role;
+        if (role === 'civilian') gameState.words[player] = wordPair.civilian;
+        else if (role === 'undercover') gameState.words[player] = wordPair.undercover;
+        else gameState.words[player] = null;
+    });
+}
+
+function showCardSelection() {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    document.getElementById('selectingPlayerName').textContent = currentPlayer;
+    const cardGrid = document.getElementById('cardGrid');
+    cardGrid.innerHTML = '';
+    const remaining = gameState.playerCount - gameState.currentPlayerIndex;
+    const suits = ['♠','♥','♦','♣','★','◆','▲','●'];
+    for (let i = 0; i < remaining; i++) {
+        const card = document.createElement('div');
+        card.className = 'player-card';
+        card.innerHTML = `<span class="card-suit">${suits[i % suits.length]}</span>`;
+        card.onclick = () => selectCard(card);
+        cardGrid.appendChild(card);
+    }
+    showScreen('cardSelectScreen');
+}
+
+function selectCard(cardElement) {
+    sfxCardFlip();
+    document.querySelectorAll('.player-card').forEach(c => c.style.pointerEvents = 'none');
+    cardElement.classList.add('selected');
+    cardElement.innerHTML = '<span class="card-suit">✓</span>';
+    setTimeout(() => revealRole(), 600);
+}
+
+function revealRole() {
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    const role = gameState.roles[currentPlayer];
+    const word = gameState.words[currentPlayer];
+    const roleTitle = document.getElementById('roleTitle');
+    const roleDesc = document.getElementById('roleDescription');
+    const wordReveal = document.getElementById('wordReveal');
+    const badge = document.getElementById('roleBadge');
+
+    if (role === 'civilian') {
+        setRoleIllustration('roleIllustration', 'civilian');
+        badge.className = 'role-badge badge-civilian';
+        badge.innerHTML = '● &nbsp;Civilian';
+        roleTitle.textContent = 'Civilian';
+        roleTitle.className = 'role-title role-civilian';
+        roleDesc.textContent = 'You know the word. Describe it cleverly — without giving it away!';
+        wordReveal.innerHTML = `<div class="word-display"><div class="word-text">${word}</div></div>`;
+    } else if (role === 'undercover') {
+        setRoleIllustration('roleIllustration', 'undercover');
+        badge.className = 'role-badge badge-undercover';
+        badge.innerHTML = '● &nbsp;Undercover';
+        roleTitle.textContent = 'Undercover';
+        roleTitle.className = 'role-title role-undercover';
+        roleDesc.textContent = 'Your word is similar but different. Blend in without being caught!';
+        wordReveal.innerHTML = `<div class="word-display"><div class="word-text">${word}</div></div>`;
+    } else {
+        setRoleIllustration('roleIllustration', 'mrwhite');
+        badge.className = 'role-badge badge-mrwhite';
+        badge.innerHTML = '● &nbsp;Mr. White';
+        roleTitle.textContent = 'Mr. White';
+        roleTitle.className = 'role-title role-mrwhite';
+        roleDesc.textContent = "You have no word. Listen carefully, blend in — and if caught, guess to win!";
+        wordReveal.innerHTML = `<div class="word-display"><div class="word-unknown">???</div></div>`;
+    }
+    showScreen('roleRevealScreen');
+}
+
+function continueToNextPlayer() {
+    gameState.currentPlayerIndex++;
+    if (gameState.currentPlayerIndex < gameState.players.length) showCardSelection();
+    else startGamePlay();
+}
+
+function startGamePlay() {
+    gameState.gameInProgress = true;
+    gameState.eliminated = [];
+    gameState.totalRounds = gameState.playerCount;
+    const civilians = gameState.players.filter(p => gameState.roles[p] === 'civilian');
+    const firstPlayer = civilians[Math.floor(Math.random() * civilians.length)];
+    gameState.firstDescriber = firstPlayer;
+    updateGamePlayScreen();
+    showScreen('gamePlayScreen');
+}
+
+function updateGamePlayScreen() {
+    document.getElementById('roundNumber').textContent = gameState.round;
+    document.getElementById('totalRounds').textContent = gameState.totalRounds;
+    const turnIndicator = document.getElementById('turnIndicator');
+    if (gameState.round === 1) {
+        turnIndicator.style.display = 'block';
+        document.getElementById('currentTurnPlayer').textContent = gameState.firstDescriber;
+    } else {
+        turnIndicator.style.display = 'none';
+    }
+    const activePlayers = gameState.players.filter(p => !gameState.eliminated.includes(p));
+    const activeDiv = document.getElementById('activePlayers');
+    activeDiv.innerHTML = '';
+    activePlayers.forEach(player => {
+        const chip = document.createElement('div');
+        chip.className = 'player-chip';
+        chip.textContent = player;
+        activeDiv.appendChild(chip);
+    });
+    const elimDiv = document.getElementById('eliminatedPlayers');
+    elimDiv.innerHTML = '';
+    if (gameState.eliminated.length === 0) {
+        elimDiv.innerHTML = '<p class="info-text" style="text-align:left; font-size:0.8rem; color:var(--muted);">None yet</p>';
+    } else {
+        gameState.eliminated.forEach(player => {
+            const chip = document.createElement('div');
+            chip.className = 'player-chip eliminated';
+            chip.textContent = player;
+            elimDiv.appendChild(chip);
+        });
+    }
+}
+
+function startVoting() {
+    const activePlayers = gameState.players.filter(p => !gameState.eliminated.includes(p));
+    const voteList = document.getElementById('votePlayerList');
+    voteList.innerHTML = '';
+    activePlayers.forEach(player => {
+        const chip = document.createElement('div');
+        chip.className = 'player-chip';
+        chip.textContent = player;
+        chip.onclick = () => selectVotePlayer(player);
+        voteList.appendChild(chip);
+    });
+    gameState.selectedVotePlayer = null;
+    showScreen('votingScreen');
+}
+
+function selectVotePlayer(player) {
+    gameState.selectedVotePlayer = player;
+    document.querySelectorAll('#votePlayerList .player-chip').forEach(chip => {
+        chip.classList.toggle('selected', chip.textContent === player);
+    });
+}
+
+function skipVote() {
+    gameState.round++;
+    updateGamePlayScreen();
+    showScreen('gamePlayScreen');
+}
+
+function confirmVote() {
+    if (!gameState.selectedVotePlayer) {
+        showError('voteError', null);
+        return;
+    }
+    clearError('voteError', null);
+    eliminatePlayer(gameState.selectedVotePlayer);
+}
+
+function eliminatePlayer(player) {
+    gameState.eliminated.push(player);
+    const role = gameState.roles[player];
+
+    // Play role-specific sound
+    if (role === 'civilian')    sfxCivilianEliminated();
+    else if (role === 'undercover') sfxUndercoverEliminated();
+    else if (role === 'mrwhite')    sfxMrWhiteEliminated();
+
+    document.getElementById('eliminatedPlayerName').textContent = player;
+    const roleTitle = document.getElementById('eliminatedRoleTitle');
+    const roleText = document.getElementById('eliminatedRoleText');
+
+    if (role === 'civilian') {
+        setRoleIllustration('eliminationIllustration', 'civilian');
+        roleTitle.textContent = 'Civilian';
+        roleTitle.className = 'role-title role-civilian';
+        roleText.textContent = 'They were a Civilian!';
+        document.getElementById('continueAfterElimination').textContent = 'Continue Game';
+        document.getElementById('continueAfterElimination').onclick = () => checkGameOver();
+    } else if (role === 'undercover') {
+        setRoleIllustration('eliminationIllustration', 'undercover');
+        roleTitle.textContent = 'Undercover';
+        roleTitle.className = 'role-title role-undercover';
+        roleText.textContent = 'They were the Undercover!';
+        document.getElementById('continueAfterElimination').textContent = 'Continue Game';
+        document.getElementById('continueAfterElimination').onclick = () => checkGameOver();
+    } else if (role === 'mrwhite') {
+        setRoleIllustration('eliminationIllustration', 'mrwhite');
+        roleTitle.textContent = 'Mr. White';
+        roleTitle.className = 'role-title role-mrwhite';
+        roleText.textContent = 'They were Mr. White! Now they get a chance to guess the word…';
+        document.getElementById('continueAfterElimination').textContent = 'Mr. White Guesses';
+        document.getElementById('continueAfterElimination').onclick = () => showScreen('mrWhiteGuessScreen');
+    }
+    showScreen('eliminationScreen');
+}
+
+function checkMrWhiteGuess() {
+    const guess = document.getElementById('mrWhiteGuess').value.trim().toUpperCase();
+    const mrWhitePlayer = gameState.players.find(p => gameState.roles[p] === 'mrwhite');
+    const undercoverPlayer = gameState.players.find(p => gameState.roles[p] === 'undercover');
+    if (guess === gameState.civilianWord.toUpperCase()) {
+        gameState.roundScores[mrWhitePlayer] += 50;
+        if (undercoverPlayer) gameState.roundScores[undercoverPlayer] += 20;
+        sfxThreatsWin();
+        endGame('Mr. White Wins!', `${mrWhitePlayer} guessed the word correctly: ${gameState.civilianWord}!`);
+    } else {
+        document.getElementById('mrWhiteGuess').value = '';
+        document.getElementById('eliminatedPlayerName').textContent = mrWhitePlayer;
+        const roleTitle = document.getElementById('eliminatedRoleTitle');
+        const roleText = document.getElementById('eliminatedRoleText');
+        roleTitle.textContent = 'Wrong Guess!';
+        roleTitle.className = 'role-title role-mrwhite';
+        roleText.textContent = `Mr. White guessed "${guess}" but that's incorrect. The game continues!`;
+        document.getElementById('continueAfterElimination').textContent = 'Continue Game';
+        document.getElementById('continueAfterElimination').onclick = () => checkGameOver();
+        showScreen('eliminationScreen');
+    }
+}
+
+function checkGameOver() {
+    const activePlayers = gameState.players.filter(p => !gameState.eliminated.includes(p));
+    const hasMrWhiteAlive = activePlayers.some(p => gameState.roles[p] === 'mrwhite');
+    const hasUndercoverAlive = activePlayers.some(p => gameState.roles[p] === 'undercover');
+    const civilianCountAlive = activePlayers.filter(p => gameState.roles[p] === 'civilian').length;
+    const mrWhitePlayer = gameState.players.find(p => gameState.roles[p] === 'mrwhite');
+    const undercoverPlayer = gameState.players.find(p => gameState.roles[p] === 'undercover');
+
+    if (!hasMrWhiteAlive && !hasUndercoverAlive) {
+        gameState.players.forEach(player => {
+            if (gameState.roles[player] === 'civilian') {
+                gameState.roundScores[player] += gameState.eliminated.includes(player) ? 10 : 20;
+            }
+        });
+        sfxWin();
+        endGame('Civilians Win!', 'All threats have been eliminated!');
+        return;
+    }
+
+    if (civilianCountAlive === 0 && (hasMrWhiteAlive || hasUndercoverAlive)) {
+        if (hasMrWhiteAlive && hasUndercoverAlive) {
+            gameState.roundScores[mrWhitePlayer] += 50;
+            gameState.roundScores[undercoverPlayer] += 40;
+            sfxThreatsWin();
+            endGame('Mr. White & Undercover Win!', 'All civilians have been eliminated!');
+            return;
+        }
+        if (hasMrWhiteAlive && !hasUndercoverAlive) {
+            gameState.roundScores[mrWhitePlayer] += 50;
+            if (undercoverPlayer) gameState.roundScores[undercoverPlayer] += 20;
+            sfxThreatsWin();
+            endGame('Mr. White Wins!', 'All civilians have been eliminated!');
+            return;
+        }
+        if (!hasMrWhiteAlive && hasUndercoverAlive) {
+            gameState.roundScores[undercoverPlayer] += 40;
+            gameState.roundScores[mrWhitePlayer] += 20;
+            sfxThreatsWin();
+            endGame('Undercover Wins!', 'All civilians have been eliminated!');
+            return;
+        }
+    }
+
+    if (activePlayers.length <= 2) {
+        if (hasMrWhiteAlive && !hasUndercoverAlive && civilianCountAlive === 1) {
+            gameState.roundScores[mrWhitePlayer] += 50;
+            if (undercoverPlayer) gameState.roundScores[undercoverPlayer] += 20;
+            sfxThreatsWin();
+            endGame('Mr. White Wins!', 'Game ended with Mr. White surviving!');
+            return;
+        }
+        if (!hasMrWhiteAlive && hasUndercoverAlive && civilianCountAlive === 1) {
+            gameState.roundScores[undercoverPlayer] += 40;
+            gameState.roundScores[mrWhitePlayer] += 20;
+            sfxThreatsWin();
+            endGame('Undercover Wins!', 'Game ended with Undercover surviving!');
+            return;
+        }
+        if (hasMrWhiteAlive && hasUndercoverAlive && civilianCountAlive === 0) {
+            gameState.roundScores[mrWhitePlayer] += 50;
+            gameState.roundScores[undercoverPlayer] += 40;
+            sfxThreatsWin();
+            endGame('Mr. White & Undercover Win!', 'Game ended with both threats surviving!');
+            return;
+        }
+        if (activePlayers.length === 1) {
+            const survivor = activePlayers[0];
+            const survivorRole = gameState.roles[survivor];
+            if (survivorRole === 'mrwhite') {
+                gameState.roundScores[mrWhitePlayer] += 50;
+                if (undercoverPlayer) gameState.roundScores[undercoverPlayer] += 20;
+                sfxThreatsWin();
+                endGame('Mr. White Wins!', 'Game ended with Mr. White as sole survivor!');
+            } else if (survivorRole === 'undercover') {
+                gameState.roundScores[undercoverPlayer] += 40;
+                gameState.roundScores[mrWhitePlayer] += 20;
+                sfxThreatsWin();
+                endGame('Undercover Wins!', 'Game ended with Undercover as sole survivor!');
+            } else {
+                gameState.players.forEach(player => {
+                    if (gameState.roles[player] === 'civilian')
+                        gameState.roundScores[player] += gameState.eliminated.includes(player) ? 10 : 20;
+                });
+                sfxWin();
+                endGame('Civilians Win!', 'Game ended with civilian as sole survivor!');
+            }
+            return;
+        }
+    }
+
+    gameState.round++;
+    updateGamePlayScreen();
+    showScreen('gamePlayScreen');
+}
+
+function endGame(title, message) {
+    gameState.players.forEach(player => {
+        gameState.scores[player] += gameState.roundScores[player] || 0;
+    });
+
+    // Pick winner icon
+    const icon = title.includes('Civilian') ? '🎖️' : title.includes('Mr. White') ? '🕵️' : '🦹';
+    document.getElementById('winnerIcon').textContent = icon;
+    document.getElementById('winnerTitle').textContent = title;
+
+    const winnerTitle = document.getElementById('winnerTitle');
+    if (title.includes('Civilian')) winnerTitle.className = 'role-title role-civilian';
+    else if (title.includes('Undercover')) winnerTitle.className = 'role-title role-undercover';
+    else winnerTitle.className = 'role-title role-mrwhite';
+
+    document.getElementById('winnerMessage').textContent = message;
+
+    const scoresDiv = document.getElementById('finalScores');
+    scoresDiv.innerHTML = '';
+    const sorted = [...gameState.players].sort((a,b) => (gameState.scores[b]||0) - (gameState.scores[a]||0));
+    sorted.forEach(player => {
+        const item = document.createElement('div');
+        item.className = 'score-item';
+        item.innerHTML = `
+            <span class="score-name">${player} <span style="color:var(--muted); font-size:0.75rem;">(${gameState.roles[player]})</span></span>
+            <span class="score-points">
+                <div class="score-game">+${gameState.roundScores[player]||0} pts</div>
+                <div class="score-total">${gameState.scores[player]||0}</div>
+            </span>`;
+        scoresDiv.appendChild(item);
+    });
+    showScreen('gameOverScreen');
+}
+
+function playAgain() {
+    gameState.round = 1;
+    gameState.totalRounds = 0;
+    gameState.firstDescriber = null;
+    gameState.eliminated = [];
+    gameState.currentPlayerIndex = 0;
+    gameState.civilianWord = null;
+    gameState.gameNumber++;
+    gameState.players.forEach(player => { gameState.roundScores[player] = 0; });
+    assignRolesAndWords();
+    showCardSelection();
+}
+
+function newGame() {
+    // Reset everything and go to setup
+    gameState = {
+        playerCount: 0, players: [], currentPlayerIndex: 0,
+        roles: {}, words: {}, eliminated: [],
+        scores: {}, roundScores: {}, gameNumber: 1,
+        round: 1, totalRounds: 0, firstDescriber: null,
+        selectedVotePlayer: null, gameInProgress: false, civilianWord: null
+    };
+    showScreen('setupScreen');
+}
+
+document.addEventListener('click', startAmbient);
+document.addEventListener('touchstart', startAmbient);
+</script>
+</body>
+</html>
